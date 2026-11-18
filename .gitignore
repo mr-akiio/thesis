@@ -12,3 +12,5 @@ build/
 *.toc
 *.bcf
 *.run.xml
+/main.pdf
+*.dvi

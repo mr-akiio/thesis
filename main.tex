@@ -13,12 +13,8 @@
 %% Locales
 \usepackage[resetfonts]{cmap}
 \usepackage[T1]{fontenc}
-\usepackage[
-  main=english, %% Use `czech` or `slovak` to write the thesis in
-                %% Czech or Slovak.
-  english, %% Add `czech` or `slovak` here (requires the
-]{babel}   %% texlive-langczechslovak package) to typeset foreign text via
-           %% \begin{otherlanguage}{czech} ... \end{otherlanguage}
+\usepackage[main=english]{babel}   
+           
 
 %% Thesis metadata
 \thesissetup{
@@ -26,8 +22,8 @@
     university  = mu,
     faculty     = fi,
     type        = bc,  %% bc = bachelor, mgr = master, rig, phd
-    department  = Department Name,
-    author      = Author Name,
+    department  = Faculty of Informatics,
+    author      = Michal Bahna,
     gender      = m,   %% m or f; affects Czech/Slovak declension
     advisor     = {Supervisor Name},
     title       = {Thesis Title},
@@ -81,6 +77,7 @@
 \input{chapters/background}
 \input{chapters/method}
 \input{chapters/results}
+\input{chapters/discussion}
 \input{chapters/conclusion}
 
 \printbibliography[heading=bibintoc]

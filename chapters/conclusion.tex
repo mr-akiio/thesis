@@ -2,4 +2,27 @@
 \markright{\textsc{Conclusion}}
 \addcontentsline{toc}{chapter}{Conclusion}
 
-Summary of contributions and future work.
+This thesis set out to establish how OpenSSL and its forks propagate through
+Common Criteria and FIPS~140 certifications, using the data indexed by sec-certs.org.
+It defined detection heuristics, evidence levels that separate genuine dependencies
+from incidental mentions, and metrics for prevalence and certification lag, and it
+implemented these in a reproducible toolkit.
+
+{Summarize the answers to RQ1--RQ3 once the results exist, including the most
+important numbers.}
+
+\section*{Future work}
+
+Possible directions for future work include:
+
+\begin{itemize}
+  \item extending the analysis to other cryptographic libraries, including those not
+    derived from OpenSSL, so that the OpenSSL family can be compared with them;
+  \item linking the identified dependencies to vulnerability data, building on the
+    approach of sec-certs~\cite{janovsky2024seccerts}, to estimate the exposure of
+    certified products to library vulnerabilities;
+  \item confirming document-based findings against binaries or source code where
+    these are available; and
+  \item integrating the pipeline into sec-certs to provide continuously updated
+    dependency information.
+\end{itemize}

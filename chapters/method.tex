@@ -1,9 +1,200 @@
-\chapter{Method}
+\chapter{Methodology and Data Collection}
 \label{ch:method}
 
-Design and implementation.
+This chapter describes how library dependencies are extracted from
+certification data and how the research questions are answered. The work
+proceeds in four phases: dataset exploration and definition of the search
+heuristics; the extraction pipeline with AI-assisted parsing; exploratory
+analysis, metrics, and visualization; and packaging of the reproducible
+notebooks.
 
-\begin{lstlisting}[language=Python, caption={An example listing}]
-def hello():
-    print("Hello, thesis!")
+\section{Data source and scope}
+\label{sec:data}
+
+The study covers all CC and FIPS~140-2 and 140-3 certificates indexed by
+sec-certs.org. The processed datasets are loaded through the documented Python
+interface~\cite{seccertsDocs}. The snapshot is downloaded once, with its
+documents, and the notebooks then load it from local JSON files, as shown in
+Listing~\ref{lst:datasets}.
+
+\begin{lstlisting}[language=Python, caption={Loading the processed datasets},
+  label={lst:datasets}]
+from sec_certs.dataset.cc import CCDataset
+from sec_certs.dataset.fips import FIPSDataset
+
+from pathlib import Path
+
+cc = CCDataset.from_json("./datasets/CC_dataset.json")
+cc.root_dir = Path("./datasets")
+fips = FIPSDataset.from_json("./datasets/FIPS_dataset.json")
+fips.root_dir = Path("./datasets")
 \end{lstlisting}
+
+For each certificate, the pipeline uses the vendor, the product name, the
+scheme, the certification dates, the certified security claims, and the text of
+the associated documents: Security Targets, certification reports, and
+maintenance reports for CC, and Security Policies for FIPS~140.
+
+{Record the sec-certs version and the dataset snapshot date. Confirm the
+exact certificate fields during Phase~1, because the API documentation does not
+list the per-certificate FIPS fields.}
+
+Because sec-certs.org is continuously updated, all counts in this thesis refer
+to one pinned snapshot, which is archived with the toolkit.
+
+\section{Detection heuristics}
+\label{sec:heuristics}
+
+The first extraction step is deliberately high in recall: a set of regular
+expressions finds candidate mentions of each library and, where present, an
+adjacent version number. PDF text extraction can split names across lines, so the
+patterns tolerate whitespace, and they match version strings used across
+OpenSSL's naming schemes, such as \texttt{0.9.8zh}, \texttt{1.0.2k}, and
+\texttt{3.0.8}. Listing~\ref{lst:patterns} shows the initial patterns. BoringCrypto
+is mapped to BoringSSL because it is the name of BoringSSL's FIPS module.
+{Add a citation for BoringCrypto.}
+
+\begin{lstlisting}[language=Python, caption={Initial library detection patterns},
+  label={lst:patterns}]
+import re
+
+LIBRARIES = {
+    "openssl": r"open\s?ssl",
+    "boringssl": r"boring\s?(?:ssl|crypto)",
+    "libressl": r"libre\s?ssl",
+    "aws-lc": r"aws[\s-]?lc",
+    "quictls": r"quictls",
+}
+QUALIFIER = (
+    r"(?:[\s-]+(?:fips|object|module|"
+    r"provider|library))*"
+)
+VERSION = (
+    r"(?:[\s-]+(?:version\s+|v)?"
+    r"(\d+\.\d+(?:\.\d+)?[a-z]{0,2}))?"
+)
+PATTERNS = {
+    name: re.compile(
+        rf"\b{lib}\b{QUALIFIER}{VERSION}",
+        re.IGNORECASE,
+    )
+    for name, lib in LIBRARIES.items()
+}
+\end{lstlisting}
+
+These patterns are a starting point. They will be tuned iteratively against the
+data, especially to distinguish standard OpenSSL from vendor-branded wrappers and
+independent forks. A match is also not necessarily a dependency: a document may
+mention OpenSSL because of a license notice, as a tool used in guidance or
+testing, or in a list of excluded components. Each mention therefore receives
+an evidence level, as defined in Table~\ref{tab:evidence}. The results report
+counts per level, so that a reader can see how strong the evidence behind each
+figure is.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Evidence levels assigned to library mentions}
+  \label{tab:evidence}
+  \begin{tabular}{lp{0.72\textwidth}}
+    \toprule
+    Level & Meaning \\
+    \midrule
+    E1 & The library is explicitly described as a component of the product
+      or module, and its version is stated. \\
+    E2 & The library is explicitly described as a component, without a version. \\
+    E3 & A dependency is implied but not stated, for example a derived module or a
+      vendor-branded wrapper. \\
+    E0 & The library is mentioned, but not as a dependency, for example in a
+      license notice or as a test tool. Excluded from dependency counts. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{AI-assisted document parsing}
+\label{sec:ai}
+
+Vendors may redact or generalize their descriptions of dependencies, so regular
+expressions alone can miss implicit references and cannot judge the role of a
+mention. A large language model is therefore used for two tasks: assigning an
+evidence level and a normalized library and version to each candidate mention,
+and searching a selected set of documents with no regular-expression match for
+implicit references.
+
+Model output is treated as a measured classifier rather than as ground truth:
+
+\begin{enumerate}
+  \item A random, stratified sample of mentions is annotated manually, and
+    kept separate from the data used to develop the prompts.
+  \item Precision and recall are reported on this sample, per evidence level and
+    for regular expressions alone versus regular expressions with the model.
+  \item Every model answer must quote the passage that supports it, and an
+    answer whose quotation does not appear in the source document is rejected.
+  \item The model identifier, prompts, and responses are stored, so that the
+    analysis can be rerun from cached responses without calling the model.
+\end{enumerate}
+
+{Choose the model and decide the sample size and whether a second annotator
+is available. Consider the cost of running the model on the full corpus.}
+
+\section{Metrics}
+\label{sec:metrics}
+
+\paragraph{Prevalence (RQ1).} For each library and scheme, prevalence is the share of
+certificates with a dependency at evidence level E1--E3, broken down by year,
+vendor, product category, and, for CC, assurance level. Because a mention is not
+evidence of evaluation, the analysis distinguishes the library's role where
+documents allow it.
+
+\paragraph{Certification lag (RQ2).} The lag is defined over certificates with a known
+library version, which requires evidence level E1.
+
+\begin{definition}[Certification lag]
+  Let $c$ be a certificate whose product depends on library version $v$, let
+  $d_{\mathrm{cert}}(c)$ be the date of the certification event, and let
+  $d_{\mathrm{rel}}(v)$ be the upstream release date of $v$. The
+  \emph{certification lag} of $c$ is
+  \begin{equation}
+    L(c) = d_{\mathrm{cert}}(c) - d_{\mathrm{rel}}(v).
+    \label{eq:lag}
+  \end{equation}
+\end{definition}
+
+The certification event is the initial certificate or a maintenance
+or re-validation event, which are analyzed separately. Because calendar time does not
+capture how far a product has fallen behind, the lag is complemented by the
+\emph{release distance}, the number of upstream releases on the same branch
+between $v$ and the newest release available at $d_{\mathrm{cert}}(c)$. As
+Section~\ref{sec:libraries} shows, a validated provider version can differ from
+the version of the library that loads it, so FIPS provider certificates are
+reported separately.
+
+{Decide how to treat vendor-patched versions, whose version strings can hide
+backported fixes, and whether lag can also be computed for the forks, which may
+have no comparable versioned releases.}
+
+\paragraph{Business and supply-chain indicators (RQ1, RQ2).} These comprise library
+adoption by vendor over time, the concentration of certificates on a few libraries
+and vendors, the frequency of re-certification, migration between library families,
+and, for FIPS, the state of the transition from FIPS~140-2 to 140-3.
+
+\paragraph{Workflow quality (RQ3).} RQ3 is assessed by the extraction quality from
+Section~\ref{sec:ai}, and by whether the complete analysis can be regenerated from
+the pinned snapshot using the published notebooks.
+
+\section{Analysis and visualization}
+\label{sec:tooling}
+
+The analysis is implemented in Python with \texttt{pandas}, and is
+visualized with \texttt{matplotlib} and \texttt{seaborn}. Dependencies are
+modeled as a bipartite graph of vendors and libraries using \texttt{networkx}, and
+interactive views are built with \texttt{plotly}. The outputs are relationship
+graphs, temporal lifecycle timelines, and summary tables.
+
+\section{Reproducibility}
+\label{sec:reproducibility}
+
+The toolkit consists of Jupyter notebooks and processing scripts that run from a
+pinned dataset snapshot with pinned dependencies. Each table and figure in
+Chapter~\ref{ch:results} is generated by a notebook, so a reader can trace any
+reported number to its source documents. Appendix~\ref{app:supplementary} describes
+how to run it.

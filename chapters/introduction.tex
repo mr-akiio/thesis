@@ -4,10 +4,79 @@
 \markright{\textsc{Introduction}}
 \addcontentsline{toc}{chapter}{Introduction}
 
-Motivation, problem statement, goals, and an outline of the thesis.
-An example citation~\cite{knuth1984}.
+Security certifications are how buyers of IT products, particularly
+in the public sector, are given assurance that a product meets a defined
+set of security requirements. The two schemes studied in this thesis are
+Common Criteria (CC)~\cite{iso15408}, which evaluates IT products
+against a stated set of security claims, and FIPS~140~\cite{fips1402,fips1403},
+which validates cryptographic modules. Both produce public documents, and
+both describe products that are rarely built from scratch: cryptography
+in particular tends to come from a small number of shared libraries.
 
-Chapter~\ref{ch:background} covers the background,
-chapter~\ref{ch:method} describes the method,
-chapter~\ref{ch:results} presents the results, and the
-Conclusion summarizes the contributions.
+OpenSSL is one of the most prominent of these libraries. The effects of
+its widespread reuse became visible in 2014, when the Heartbleed
+vulnerability (CVE-2014-0160) prompted large-scale measurement of how
+many services were exposed and how quickly they were
+patched~\cite{durumeric2014heartbleed}. In the same year, LibreSSL was
+forked from OpenSSL~\cite{libressl} and Google announced
+BoringSSL~\cite{langley2014boringssl}. Today, the library that a product
+calls ``OpenSSL'' may be one of several related code bases.
+
+\section*{Problem statement}
+
+Certification documents are not designed to answer supply-chain questions.
+Which third-party cryptographic library a product uses, and in which
+version, is usually disclosed, if at all, in the prose of a PDF
+document. The sec-certs project~\cite{janovsky2024seccerts} has made
+thousands of these documents accessible and machine-readable, but tracing
+the lineage of one specific library across Security Targets, certification
+reports, and maintenance reports still requires a targeted analytical
+pipeline. As a result, it is difficult to establish how far OpenSSL and
+its forks have spread through certified products, or how far certified
+products trail the upstream releases they depend on.
+
+\section*{Goals and research questions}
+
+This thesis investigates the footprint, usage patterns, and lifecycle of
+OpenSSL and its forks in the certified products indexed by sec-certs.org,
+and implements an extensible, reproducible framework for analyzing and
+visualizing these dependencies. It addresses three research questions:
+
+\begin{description}
+  \item[RQ1] How widely are OpenSSL and its clones and forks represented
+    across Common Criteria and FIPS~140 certifications indexed by
+    sec-certs.org?
+  \item[RQ2] What is the gap between upstream OpenSSL releases and the
+    validation or re-validation of dependent certified products?
+  \item[RQ3] How can automated data mining, AI/NLP document parsing, and
+    interactive visual tooling be integrated into sec-certs workflows to
+    reliably track cryptographic dependencies and produce reproducible
+    business intelligence?
+\end{description}
+
+The thesis is an empirical study of public certification data. Manual
+reverse engineering, side-channel analysis, and binary-level vulnerability
+research of certified products are out of scope, as are certification
+frameworks other than CC and FIPS~140.
+
+\section*{Contributions}
+
+The thesis makes two contributions:
+
+\begin{itemize}
+  \item an empirical analysis of vendor adoption trends, re-certification
+    patterns, and compliance lag in open-source cryptography; and
+  \item an open toolkit of Jupyter notebooks and processing scripts that
+    extends sec-certs and supports ongoing monitoring and reproducible
+    analysis.
+\end{itemize}
+
+\section*{Thesis outline}
+
+Chapter~\ref{ch:background} introduces the certification schemes, the
+OpenSSL family of libraries, the sec-certs project, and related work.
+Chapter~\ref{ch:method} defines the dataset, the detection heuristics, the
+AI-assisted parsing, and the metrics. Chapter~\ref{ch:results} presents the
+findings for each research question, and Chapter~\ref{ch:discussion}
+interprets them and considers threats to validity. The Conclusion summarizes
+the contributions and proposes future work.

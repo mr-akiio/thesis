@@ -1,13 +1,155 @@
 \chapter{Background}
 \label{ch:background}
 
-Related work and theory.
+This chapter introduces the two certification schemes, the family of
+libraries under study, and the sec-certs project, and then reviews related
+work.
 
-\begin{definition}
-  An example definition.
-\end{definition}
+\section{Common Criteria}
+\label{sec:cc}
 
-\begin{equation}
-  E = mc^2
-  \label{eq:example}
-\end{equation}
+Common Criteria, standardized as ISO/IEC~15408~\cite{iso15408}, is a
+framework for evaluating the security of IT products. The product under
+evaluation is called the Target of Evaluation (TOE). The vendor describes
+the TOE and its security claims in a Security Target (ST), which may claim
+conformance to a Protection Profile, a reusable set of requirements for a
+class of products. An accredited laboratory evaluates the TOE against those
+claims at a chosen Evaluation Assurance Level (EAL), and a national scheme
+issues the certificate and a certification report.
+
+Three properties of the scheme matter for this thesis:
+
+\begin{itemize}
+  \item \textbf{The certificate covers the claims, not the whole product.}
+    A library may be part of the TOE, part of its environment, or merely
+    mentioned, so a mention alone does not establish that the library was
+    evaluated.
+  \item \textbf{Disclosure is not uniform.} CC does not require a list of
+    third-party components in a form suited to analysis. Vendors decide how
+    much to reveal, and the public version of an ST may be sanitized.
+  \item \textbf{Certificates change over time.} A certified product can be
+    updated through assurance continuity, which produces maintenance
+    reports. These documents are a potential source of evidence on library
+    upgrades.
+\end{itemize}
+
+{Cite the CC portal or CCRA for mutual recognition and assurance
+continuity. The portal could not be retrieved automatically while drafting,
+so check these statements against it directly. Also check the current status of
+ISO/IEC~15408-1:2022, because ISO's own pages were inconsistent about it, and
+decide whether to cite the CC version used by most certificates in the dataset.}
+
+\section{FIPS 140}
+\label{sec:fips}
+
+FIPS~140 is the US federal standard for the security requirements of
+cryptographic modules~\cite{fips1402,fips1403}. Modules are tested by
+accredited laboratories and validated under the Cryptographic Module
+Validation Program (CMVP), which publishes a certificate and a Security
+Policy for each module. In contrast to CC, the object of a FIPS validation
+is the cryptographic module itself, so a library can appear either as the
+validated module or as a component inside a larger one.
+
+The standard is in the middle of a generational change that directly affects
+lifecycle analysis. FIPS~140-3 was approved in March~2019 and took effect in
+September of that year. CMVP began accepting FIPS~140-3 submissions in
+September~2020 and stopped accepting FIPS~140-2 submissions for new
+certificates in April~2022. In September~2026, the FIPS~140-2 validations were
+scheduled to move to the Historical List, although CMVP continues to support
+buying and using such modules for existing systems~\cite{nistTransition}.
+{Confirm the move took place as scheduled and how sec-certs records it.
+The NIST page gives both 21 and 22 September.}
+
+\section{OpenSSL and its forks}
+\label{sec:libraries}
+
+OpenSSL is an open-source implementation of the TLS protocol and a
+general-purpose cryptographic library. Its current release policy provides a
+new release every six months, and from version~3.5, a long-term support
+release every two years with at least five years of
+support~\cite{opensslReleaseStrategy}. This cadence is the upstream reference
+against which certification lag is measured in Chapter~\ref{ch:method}.
+
+OpenSSL has its own relationship with FIPS~140. Historically, FIPS support was
+delivered through the separate OpenSSL FIPS Object Module, while the 3.x series
+provides it through the FIPS Provider. The FIPS Provider illustrates why the
+version numbers require care. Certificate \#4282 was first validated in
+August~2022 and now lists versions 3.0.8 and 3.0.9~\cite{cmvp4282}. Versions
+3.0.8 and 3.0.9 are also covered by the second FIPS~140-2 certificate, \#4811,
+and version 3.1.2 by the FIPS~140-3 certificate \#4985~\cite{opensslFipsCve}.
+According to an OpenSSL developer, the provider is designed to work with all
+3.0.x releases~\cite{opensslUsers4282}. The version of the validated provider
+can therefore differ from the version of the library that loads it.
+{Add a primary source for the FIPS Object Module history.}
+
+Throughout this thesis, a \emph{fork} is a code base with a documented
+derivation from OpenSSL, and \emph{clone} is used only as the broader term from
+the thesis assignment. Independent TLS libraries that do not derive from OpenSSL
+are not treated as forks. Table~\ref{tab:libraries} lists the libraries in scope.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Libraries in scope and their relationship to OpenSSL}
+  \label{tab:libraries}
+  \begin{tabular}{lp{0.62\textwidth}}
+    \toprule
+    Library & Relationship to OpenSSL \\
+    \midrule
+    OpenSSL & The upstream project, including the FIPS Object Module and the
+      FIPS Provider. \\
+    LibreSSL & Forked in 2014 with the goal of modernizing the code base and
+      improving security; developed mainly in the OpenBSD source
+      tree~\cite{libressl}. \\
+    BoringSSL & Google's fork, created to replace a growing set of private
+      patches. Not intended for general use, and without API or ABI stability
+      guarantees~\cite{langley2014boringssl,boringssl}. \\
+    AWS-LC & Maintained by the AWS Cryptography team; based on code from both
+      BoringSSL and OpenSSL~\cite{awslc}. \\
+    quictls & A further member of the OpenSSL family of
+      forks~\cite{stenberg2025forks}. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The list is deliberately open. Identifying further forks, as well as
+vendor-branded wrappers, is part of the first project phase
+(Section~\ref{sec:heuristics}).
+
+\section{The sec-certs project}
+\label{sec:seccerts}
+
+The sec-certs project~\cite{janovsky2024seccerts} collects CC and FIPS~140
+certification artifacts, processes them, and publishes the results at
+sec-certs.org. Its Python package exposes each scheme as a dataset object that
+can be downloaded in processed form or loaded from JSON. Its processing
+pipeline extracts data such as keywords from the documents and computes various
+heuristics over the certificates~\cite{seccertsDocs}. The thesis builds on this
+processed data instead of collecting the documents again.
+
+\section{Related work}
+\label{sec:related}
+
+The closest related work is the sec-certs study by Janovsky et
+al.~\cite{janovsky2024seccerts}. Its large-scale automated analysis of Common
+Criteria certificates maps vulnerabilities from the National Vulnerability
+Database to certified products using unsupervised models, and identifies the
+security requirements associated with products that have fewer and less severe
+vulnerabilities. This thesis uses the same data source but changes the unit of
+analysis: it follows one family of cryptographic libraries across both schemes,
+rather than following vulnerabilities across CC products.
+
+Durumeric et al.~\cite{durumeric2014heartbleed} measured the population
+vulnerable to Heartbleed, its patching over time, and exploitation attempts.
+Their work observes deployed systems on the Internet. This thesis asks a
+complementary question about the certified product population, which cannot be
+observed by scanning alone and for which documents are the main evidence.
+
+Ladisa et al.~\cite{ladisa2023sok} provide a taxonomy of attacks on open-source
+software supply chains. It offers general context on the risks of inherited
+dependencies, while this thesis focuses on measuring one such dependency rather
+than on attack vectors.
+
+{Extend with a systematic literature search: prior analyses of FIPS~140 and
+CMVP data, software composition analysis, SBOM adoption, and LLM-based
+information extraction from technical documents. Check whether anyone has already
+studied OpenSSL in certified products before claiming this as a gap.}
