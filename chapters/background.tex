@@ -5,6 +5,8 @@ This chapter introduces the two certification schemes, the family of
 libraries under study, and the sec-certs project, and then reviews related
 work.
 
+Statement on AI use: I used AI for proof reading, formatting and help with latex bugs.
+
 \section{Common Criteria}
 \label{sec:cc}
 
@@ -33,11 +35,7 @@ Three properties of the scheme matter for this thesis:
     upgrades.
 \end{itemize}
 
-{Cite the CC portal or CCRA for mutual recognition and assurance
-continuity. The portal could not be retrieved automatically while drafting,
-so check these statements against it directly. Also check the current status of
-ISO/IEC~15408-1:2022, because ISO's own pages were inconsistent about it, and
-decide whether to cite the CC version used by most certificates in the dataset.}
+
 
 \section{FIPS 140}
 \label{sec:fips}
@@ -57,8 +55,7 @@ September~2020 and stopped accepting FIPS~140-2 submissions for new
 certificates in April~2022. In September~2026, the FIPS~140-2 validations were
 scheduled to move to the Historical List, although CMVP continues to support
 buying and using such modules for existing systems~\cite{nistTransition}.
-{Confirm the move took place as scheduled and how sec-certs records it.
-The NIST page gives both 21 and 22 September.}
+
 
 \section{OpenSSL and its forks}
 \label{sec:libraries}
@@ -80,7 +77,7 @@ and version 3.1.2 by the FIPS~140-3 certificate \#4985~\cite{opensslFipsCve}.
 According to an OpenSSL developer, the provider is designed to work with all
 3.0.x releases~\cite{opensslUsers4282}. The version of the validated provider
 can therefore differ from the version of the library that loads it.
-{Add a primary source for the FIPS Object Module history.}
+
 
 Throughout this thesis, a \emph{fork} is a code base with a documented
 derivation from OpenSSL, and \emph{clone} is used only as the broader term from
@@ -149,7 +146,4 @@ software supply chains. It offers general context on the risks of inherited
 dependencies, while this thesis focuses on measuring one such dependency rather
 than on attack vectors.
 
-{Extend with a systematic literature search: prior analyses of FIPS~140 and
-CMVP data, software composition analysis, SBOM adoption, and LLM-based
-information extraction from technical documents. Check whether anyone has already
-studied OpenSSL in certified products before claiming this as a gap.}
+
