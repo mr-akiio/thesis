@@ -1,0 +1,55 @@
+\chapter{Discussion}
+\label{ch:discussion}
+
+\section{Interpretation of the findings}
+\label{sec:interpretation}
+
+{Write once the results exist. Answer each research question directly, then
+explain what the findings mean for each audience: certification bodies, vendors,
+buyers, and researchers who assess third-party cryptographic dependencies.}
+
+A long certification lag is not automatically a security failure: a vendor may
+backport fixes without changing the version string, and re-validating a module has
+a real cost. The lag should therefore be read as a measure of the distance between
+the certified and upstream states rather than as a direct measure of risk.
+
+\section{Threats to validity}
+\label{sec:threats}
+
+\paragraph{Incomplete disclosure.} The largest threat is that the absence of a mention
+does not imply the absence of a dependency, because vendors may redact or generalize
+their dependency descriptions. All prevalence figures are therefore lower bounds on
+actual use, and disclosure practices may differ between vendors, schemes, and
+periods. An apparent trend may reflect changed disclosure rather than changed use.
+
+\paragraph{A mention is not an evaluated dependency.} A library may appear in a document
+without being evaluated, or without being within the certified boundary. The evidence
+levels in Table~\ref{tab:evidence} mitigate this threat but do not remove it, since the
+levels are based on what the documents state.
+
+\paragraph{Extraction errors.} Text extraction from PDF documents can fail or corrupt
+content, and both regular expressions and language models produce errors. Measuring
+precision and recall on an annotated sample bounds these errors. The sample itself is
+subject to annotator judgment and to sampling error.
+
+\paragraph{Version semantics.} Version strings can hide backported patches, vendor builds,
+or a validated provider that differs from the library using it, which affects the
+lag defined in Equation~\ref{eq:lag}. The lag can also only be computed for certificates
+with a stated version, and these may not represent all certificates.
+
+\paragraph{Dataset dependence.} The analysis inherits any errors and coverage limits of
+sec-certs. Pinning a snapshot makes the study reproducible, but the findings describe the
+state of the data at that date.
+
+\paragraph{Non-independent observations.} One vendor may hold many closely related
+certificates, so raw certificate counts can overweight large product families. Results
+should therefore also be reported per vendor or product family where this changes the
+conclusion.
+
+\section{Limitations}
+\label{sec:limitations}
+
+The study relies only on public documents. It does not inspect binaries or source code,
+so no statement about a product's dependency is confirmed against the product itself.
+It also does not assess the implementation quality of any library or whether a
+particular product is vulnerable.
